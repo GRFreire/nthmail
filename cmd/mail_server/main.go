@@ -114,10 +114,6 @@ func main() {
 		port = 1025
 	}
 
-	if port == 0 {
-		port = 1025
-	}
-
 	server.Addr = fmt.Sprintf("%s:%d", domain, port)
 	server.Domain = domain
 	server.WriteTimeout = 60 * time.Second
