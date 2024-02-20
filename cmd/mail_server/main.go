@@ -2,8 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/emersion/go-smtp"
@@ -95,8 +98,28 @@ func main() {
 
 	server := smtp.NewServer(backend)
 
-	server.Addr = "localhost:1025"
-	server.Domain = "localhost"
+	domain, exists := os.LookupEnv("MAIL_SERVER_DOMAIN")
+	if !exists {
+		domain = "localhost"
+	}
+
+	var port int
+	port_str, exists := os.LookupEnv("MAIL_SERVER_PORT")
+	if exists {
+		port, err = strconv.Atoi(port_str)
+		if err != nil {
+			log.Fatal("env:MAIL_SERVER_PORT is not a number")
+		}
+	} else {
+		port = 1025
+	}
+
+	if port == 0 {
+		port = 1025
+	}
+
+	server.Addr = fmt.Sprintf("%s:%d", domain, port)
+	server.Domain = domain
 	server.WriteTimeout = 60 * time.Second
 	server.ReadTimeout = 60 * time.Second
 	server.MaxMessageBytes = 1024 * 1024
