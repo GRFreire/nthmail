@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,7 +15,7 @@ import (
 
 type mail struct {
 	Id                   int
-	Arrived_at           int
+	Arrived_at           int64
 	Rcpt_addr, From_addr string
 	Data                 []byte
 }
@@ -98,16 +97,9 @@ func main() {
 
 			mails = append(mails, m)
 		}
-		b, err := json.Marshal(mails)
-		if err != nil {
-			res.WriteHeader(500)
-			res.Write([]byte("internal server error"))
 
-			log.Println("could not marshal json")
-			return
-		}
-
-		res.Write([]byte(b))
+		body := inbox_body(rcpt_addr, mails)
+		body.Render(req.Context(), res)
 	})
 
 	var port int
