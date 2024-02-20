@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/GRFreire/nthmail/pkg/rig"
 	"github.com/go-chi/chi"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -27,11 +28,23 @@ func main() {
 	}
 	defer db.Close()
 
+	domain, exists := os.LookupEnv("MAIL_SERVER_DOMAIN")
+	if !exists {
+		domain = "localhost"
+	}
+
 	router := chi.NewRouter()
 
 	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
-		component := index("nthmail.xyz")
-		component.Render(req.Context(), res)
+		page := index_page()
+		page.Render(req.Context(), res)
+	})
+
+	router.Get("/random", func(res http.ResponseWriter, req *http.Request) {
+		inbox_name := rig.GenerateRandomInboxName()
+		inbox_addr := fmt.Sprintf("/%s@%s", inbox_name, domain)
+
+		http.Redirect(res, req, inbox_addr, 307)
 	})
 
 	router.Get("/{rcpt-addr}", func(res http.ResponseWriter, req *http.Request) {

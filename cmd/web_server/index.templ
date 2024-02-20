@@ -1,5 +1,22 @@
 package main
 
-templ index(appname string) {
-	<h1>Home for { appname }</h1>
+templ index_page() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<title>nthmail.xyz</title>
+			<meta name="viewport" content="width=device-width,initial-scale=1"/>
+			<meta name="description" content="A temporary mail service"/>
+		</head>
+		<body>
+			<h1>nthmail.xyz</h1>
+			<p>
+				A disposable, temporary and private mail address!
+			</p>
+            <form action="random" >
+			<button type="submit">Get one now!</button>
+            </form>
+		</body>
+	</html>
 }
