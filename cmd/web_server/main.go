@@ -29,6 +29,11 @@ func main() {
 
 	router := chi.NewRouter()
 
+	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		component := index("nthmail.xyz")
+		component.Render(req.Context(), res)
+	})
+
 	router.Get("/{rcpt-addr}", func(res http.ResponseWriter, req *http.Request) {
 		rcpt_addr := chi.URLParam(req, "rcpt-addr")
 		if len(rcpt_addr) == 0 {
@@ -78,7 +83,7 @@ func main() {
 				return
 			}
 
-            mails = append(mails, m)
+			mails = append(mails, m)
 		}
 		b, err := json.Marshal(mails)
 		if err != nil {
@@ -104,5 +109,8 @@ func main() {
 	}
 
 	log.Println("Listening on port", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), router)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), router)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
