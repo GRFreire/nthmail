@@ -16,6 +16,8 @@ run_server() {
 ts="$(get_ts)"
 run_server
 
+trap "kill -s KILL $pid; trap - EXIT; exit" EXIT INT HUP
+
 while true; do
     sleep 1;
     new_ts="$(get_ts)"
