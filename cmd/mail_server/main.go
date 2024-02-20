@@ -26,9 +26,9 @@ func (backend *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 }
 
 type Session struct {
-	tx           *sql.Tx
-	from, rcpt   string
-	rcpt_addr_id int64
+	tx         *sql.Tx
+	from, rcpt string
+	arrived_at int64
 }
 
 func (session *Session) AuthPlain(username, password string) error {
@@ -36,34 +36,14 @@ func (session *Session) AuthPlain(username, password string) error {
 }
 
 func (session *Session) Mail(from string, opts *smtp.MailOptions) error {
+	session.arrived_at = time.Now().UTC().Unix()
+
 	session.from = from
 	return nil
 }
 
 func (session *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	session.rcpt = to
-
-	stmt, err := session.tx.Prepare("INSERT OR IGNORE INTO inboxes (addr) VALUES (?) RETURNING id")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	res, err := stmt.Exec(to)
-	if err != nil {
-		return err
-	}
-
-    // sometimes does not work and returns 0
-    // see https://github.com/mattn/go-sqlite3/issues/1140
-	id, err := res.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	log.Println("Last id: ", id)
-
-	session.rcpt_addr_id = id
 
 	return nil
 }
@@ -73,12 +53,13 @@ func (session *Session) Data(reader io.Reader) error {
 		return err
 	} else {
 
-		stmt, err := session.tx.Prepare("INSERT INTO mails (inbox_id, from_addr, data) VALUES (?, ?, ?)")
+		stmt, err := session.tx.Prepare("INSERT INTO mails (arrived_at, rcpt_addr, from_addr, data) VALUES (?, ?, ?, ?)")
 		if err != nil {
 			return err
 		}
+		defer stmt.Close()
 
-		_, err = stmt.Exec(session.rcpt_addr_id, session.from, bytes)
+		_, err = stmt.Exec(session.arrived_at, session.rcpt, session.from, bytes)
 		if err != nil {
 			return err
 		}
