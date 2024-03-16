@@ -1,8 +1,10 @@
 package main
 
-import "time"
+import (
+	"github.com/russross/blackfriday/v2"
+)
 
-templ inbox_body(rcpt_addr string, ms []mail) {
+templ inbox_body(rcpt_addr string, ms []mail_obj) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -24,7 +26,59 @@ templ inbox_body(rcpt_addr string, ms []mail) {
 	</html>
 }
 
-templ mail_comp(m mail) {
-	<h3>From: &lt{ m.From_addr }&gt at { time.Unix(m.Arrived_at, 0).Format(time.DateTime) }</h3>
-	<p>{ string(m.Data) }</p>
+templ mail_comp(m mail_obj) {
+	<h3>From: { m.From } at { m.Date }</h3>
+	if m.To != "" {
+		<h3>To: { m.To }</h3>
+	}
+	if m.Bcc != "" {
+		<h3>Bcc: { m.Bcc }</h3>
+	}
+	<h3>Subject: { m.Subject }</h3>
+	if m.MediaType == NotMultipart {
+		for _, b := range m.Body {
+			@body_plain(b.Data)
+		}
+	} else {
+		if m.MediaType == Mixed {
+			for _, b := range m.Body {
+				switch b.MimeType {
+					case PlainText:
+						@body_plain(b.Data)
+					case Html:
+						@body_html(b.Data)
+					case Markdown:
+						@body_plain(b.Data)
+					default:
+						@body_plain(b.Data)
+				}
+			}
+		} else {
+			switch m.Body[m.PreferedBodyIndex].MimeType {
+				case PlainText:
+					@body_plain(m.Body[m.PreferedBodyIndex].Data)
+				case Html:
+					@body_html(m.Body[m.PreferedBodyIndex].Data)
+				case Markdown:
+					@body_markdown(m.Body[m.PreferedBodyIndex].Data)
+				default:
+					@body_plain(m.Body[m.PreferedBodyIndex].Data)
+			}
+		}
+	}
+}
+
+templ body_plain(s string) {
+	<p>{ s }</p>
+}
+
+templ body_html(s string) {
+	<p>
+		@templ.Raw(s)
+	</p>
+}
+
+templ body_markdown(s string) {
+	@body_html(string(blackfriday.Run([]byte(s))))
+	)
 }
