@@ -62,6 +62,27 @@ type mail_obj struct {
 	PreferedBodyIndex int
 }
 
+func parse_mime_format(s string) (MIMEType, bool) {
+	var t MIMEType
+
+	if s == "" {
+		return t, false
+	}
+
+	switch {
+	case strings.Compare(s, "html") == 0:
+		t = Html
+	case strings.Compare(s, "md") == 0:
+		t = Markdown
+	case strings.Compare(s, "text") == 0:
+		t = PlainText
+	default:
+		return t, false
+	}
+
+	return t, true
+}
+
 func parse_mail(dbm db_mail, policy *bluemonday.Policy) (mail_obj, error) {
 	var m mail_obj
 
@@ -115,24 +136,6 @@ func parse_mail(dbm db_mail, policy *bluemonday.Policy) (mail_obj, error) {
 	}
 
 	m.Body = body
-	m.PreferedBodyIndex = -1
-	for i, b := range m.Body {
-		if m.PreferedBodyIndex == -1 {
-			m.PreferedBodyIndex = i
-			continue
-		}
-
-		if b.MimeType == Html {
-			m.PreferedBodyIndex = i
-			continue
-		}
-
-		if b.MimeType == Markdown {
-			if m.Body[i].MimeType != Html {
-				m.PreferedBodyIndex = i
-			}
-		}
-	}
 
 	return m, nil
 }
@@ -220,6 +223,36 @@ func parse_mail_part(mime_data io.Reader, boundary string) ([]mail_body, error) 
 	return body, nil
 }
 
+func set_format_index(m mail_obj, format MIMEType, pref bool) mail_obj {
+	m.PreferedBodyIndex = -1
+	for i, b := range m.Body {
+		if pref && b.MimeType == format {
+			m.PreferedBodyIndex = i
+			break
+		}
+
+		if m.PreferedBodyIndex == -1 {
+			m.PreferedBodyIndex = i
+			continue
+		}
+
+
+		if b.MimeType == Html {
+			m.PreferedBodyIndex = i
+			continue
+		}
+
+		if b.MimeType == Markdown {
+			if m.Body[i].MimeType != Html {
+				m.PreferedBodyIndex = i
+			}
+		}
+	}
+
+
+	return m
+}
+
 func main() {
 	db, err := sql.Open("sqlite3", "./db.db")
 	if err != nil {
@@ -288,6 +321,7 @@ func main() {
 		}
 		defer rows.Close()
 
+		format, f_pref := parse_mime_format(req.URL.Query().Get("format"))
 		var mails []mail_obj
 		for rows.Next() {
 			var m db_mail
@@ -309,6 +343,8 @@ func main() {
 				log.Println(err)
 				return
 			}
+
+			mail_obj = set_format_index(mail_obj, format, f_pref)
 
 			mails = append(mails, mail_obj)
 		}
