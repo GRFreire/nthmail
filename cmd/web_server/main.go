@@ -20,7 +20,6 @@ import (
 	"github.com/GRFreire/nthmail/pkg/rig"
 	"github.com/go-chi/chi"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/microcosm-cc/bluemonday"
 )
 
 type db_mail struct {
@@ -51,6 +50,7 @@ type mail_body struct {
 }
 
 type mail_obj struct {
+	Id      int
 	From    string
 	Date    string
 	To      string
@@ -83,8 +83,9 @@ func parse_mime_format(s string) (MIMEType, bool) {
 	return t, true
 }
 
-func parse_mail(dbm db_mail, policy *bluemonday.Policy) (mail_obj, error) {
+func parse_mail(dbm db_mail, header_only bool) (mail_obj, error) {
 	var m mail_obj
+	m.Id = dbm.Id
 
 	mail_msg, err := mail.ReadMessage(bytes.NewReader(dbm.Data))
 	if err != nil {
@@ -98,6 +99,10 @@ func parse_mail(dbm db_mail, policy *bluemonday.Policy) (mail_obj, error) {
 	m.To, _ = dec.DecodeHeader(mail_msg.Header.Get("To"))
 	m.Bcc, _ = dec.DecodeHeader(mail_msg.Header.Get("Bcc"))
 	m.Subject, _ = dec.DecodeHeader(mail_msg.Header.Get("Subject"))
+
+	if header_only {
+		return m, nil
+	}
 
 	content_type := mail_msg.Header.Get("Content-Type")
 	mediaType, params, err := mime.ParseMediaType(content_type)
@@ -236,7 +241,6 @@ func set_format_index(m mail_obj, format MIMEType, pref bool) mail_obj {
 			continue
 		}
 
-
 		if b.MimeType == Html {
 			m.PreferedBodyIndex = i
 			continue
@@ -248,7 +252,6 @@ func set_format_index(m mail_obj, format MIMEType, pref bool) mail_obj {
 			}
 		}
 	}
-
 
 	return m
 }
@@ -279,11 +282,6 @@ func main() {
 		http.Redirect(res, req, inbox_addr, 307)
 	})
 
-	p := bluemonday.UGCPolicy()
-	p.AllowStyles()
-	p.AllowStyling()
-	p.AllowElements("style")
-	p.AllowUnsafe(true)
 	router.Get("/{rcpt-addr}", func(res http.ResponseWriter, req *http.Request) {
 		rcpt_addr := chi.URLParam(req, "rcpt-addr")
 		if len(rcpt_addr) == 0 {
@@ -321,7 +319,6 @@ func main() {
 		}
 		defer rows.Close()
 
-		format, f_pref := parse_mime_format(req.URL.Query().Get("format"))
 		var mails []mail_obj
 		for rows.Next() {
 			var m db_mail
@@ -334,7 +331,7 @@ func main() {
 				return
 			}
 
-			mail_obj, err := parse_mail(m, p)
+			mail_obj, err := parse_mail(m, true)
 			if err != nil {
 				res.WriteHeader(500)
 				res.Write([]byte("internal server error"))
@@ -344,12 +341,80 @@ func main() {
 				return
 			}
 
-			mail_obj = set_format_index(mail_obj, format, f_pref)
-
 			mails = append(mails, mail_obj)
 		}
 
 		body := inbox_body(rcpt_addr, mails)
+		body.Render(req.Context(), res)
+	})
+
+	router.Get("/{rcpt-addr}/{mail-id}", func(res http.ResponseWriter, req *http.Request) {
+		rcpt_addr := chi.URLParam(req, "rcpt-addr")
+		if len(rcpt_addr) == 0 {
+			res.WriteHeader(404)
+			res.Write([]byte("inbox not found"))
+			return
+		}
+
+		mail_id := chi.URLParam(req, "mail-id")
+		if len(rcpt_addr) == 0 {
+			res.WriteHeader(404)
+			res.Write([]byte("mail not found"))
+			return
+		}
+
+		tx, err := db.Begin()
+		if err != nil {
+			res.WriteHeader(500)
+			res.Write([]byte("internal server error"))
+
+			log.Println("could not begin db transaction")
+			return
+		}
+
+		stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.data FROM mails WHERE mails.rcpt_addr = ? AND mails.id = ?")
+		if err != nil {
+			res.WriteHeader(500)
+			res.Write([]byte("internal server error"))
+
+			log.Println("could not prepare db stmt")
+			return
+		}
+		defer stmt.Close()
+
+		row := stmt.QueryRow(rcpt_addr, mail_id)
+		if err != nil {
+			res.WriteHeader(500)
+			res.Write([]byte("internal server error"))
+
+			log.Println("could not query db stmt")
+			return
+		}
+
+		format, f_pref := parse_mime_format(req.URL.Query().Get("format"))
+		var m db_mail
+		err = row.Scan(&m.Id, &m.Arrived_at, &m.Rcpt_addr, &m.From_addr, &m.Data)
+		if err != nil {
+			res.WriteHeader(500)
+			res.Write([]byte("internal server error"))
+
+			log.Println("could not scan db row")
+			return
+		}
+
+		mail_obj, err := parse_mail(m, false)
+		if err != nil {
+			res.WriteHeader(500)
+			res.Write([]byte("internal server error"))
+
+			log.Println("could not parse mail")
+			log.Println(err)
+			return
+		}
+
+		mail_obj = set_format_index(mail_obj, format, f_pref)
+
+		body := mail_body_comp(rcpt_addr, mail_obj)
 		body.Render(req.Context(), res)
 	})
 
