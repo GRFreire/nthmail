@@ -15,7 +15,11 @@ run_server() {
 ts="$(get_ts)"
 run_server
 
-trap "kill -s KILL $pid; trap - EXIT; exit" EXIT INT HUP
+k() {
+    kill -s KILL $pid
+}
+
+trap "k; trap - EXIT; exit 0" EXIT INT HUP
 
 while true; do
     sleep 1;
@@ -24,7 +28,7 @@ while true; do
         ts="$new_ts"
         echo ""
         if [ "$pid" != "0" ]; then
-            kill -s KILL $pid
+            k
         fi
         run_server
     fi
