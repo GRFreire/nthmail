@@ -1,10 +1,9 @@
 #!/bin/sh
 
-watch_dir="cmd/web_server"
 pid=0
 
 get_ts() {
-    stat "$watch_dir" | grep Modify | awk '{$1=""; print $0}' | sed 's/^ //g'
+    stat cmd/web_server pkg/** | grep Modify | awk '{$1=""; print $0}' | sed 's/^ //g' | sort -r | head -1
 }
 
 run_server() {
