@@ -2,9 +2,10 @@ package main
 
 import (
 	"github.com/russross/blackfriday/v2"
+	"github.com/GRFreire/nthmail/pkg/mail_utils"
 )
 
-templ mail_body_comp(rcpt_addr string, m mail_obj) {
+templ mail_body_comp(rcpt_addr string, m mail_utils.Mail_obj) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -25,13 +26,13 @@ templ mail_body_comp(rcpt_addr string, m mail_obj) {
 	</html>
 }
 
-templ mime_type(b mail_body) {
+templ mime_type(b mail_utils.Mail_body) {
 	switch b.MimeType {
-		case Html:
+		case mail_utils.Html:
 			@body_html(b.Data)
-		case Markdown:
+		case mail_utils.Markdown:
 			@body_markdown(b.Data)
-		case PlainText:
+		case mail_utils.PlainText:
 			@body_plain(b.Data)
 		default:
 			@body_plain(b.Data)

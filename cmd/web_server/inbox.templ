@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/GRFreire/nthmail/pkg/mail_utils"
 )
 
-templ inbox_body(rcpt_addr string, ms []mail_obj) {
+templ inbox_body(rcpt_addr string, ms []mail_utils.Mail_obj) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -26,7 +27,7 @@ templ inbox_body(rcpt_addr string, ms []mail_obj) {
 	</html>
 }
 
-templ mail_comp(m mail_obj, rcpt_addr string) {
+templ mail_comp(m mail_utils.Mail_obj, rcpt_addr string) {
 	<a href={ templ.SafeURL(fmt.Sprintf("/%s/%d", rcpt_addr, m.Id)) }>
 		<div>
 			<p><b>{ m.Subject }</b></p>
