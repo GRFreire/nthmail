@@ -8,15 +8,16 @@ templ index_page() {
 			<title>nthmail.xyz</title>
 			<meta name="viewport" content="width=device-width,initial-scale=1"/>
 			<meta name="description" content="A temporary mail service"/>
+			@styles()
 		</head>
-		<body>
+		<body class="index">
 			<h1>nthmail.xyz</h1>
 			<p>
 				A disposable, temporary and private mail address!
 			</p>
-            <form action="random" >
-			<button type="submit">Get one now!</button>
-            </form>
+			<div class="random">
+				<a href="random">Get one now!</a>
+			</div>
 		</body>
 	</html>
 }

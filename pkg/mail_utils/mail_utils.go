@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"slices"
 	"strings"
+	"time"
 )
 
 type MIMEType uint8
@@ -36,7 +37,7 @@ type Mail_body struct {
 type Mail_obj struct {
 	Id      int
 	From    string
-	Date    string
+	Date    time.Time
 	To      string
 	Bcc     string
 	Subject string
@@ -78,7 +79,6 @@ func Parse_mail(m_data []byte, header_only bool) (Mail_obj, error) {
 	// HEADERS
 	dec := new(mime.WordDecoder)
 	m.From, _ = dec.DecodeHeader(mail_msg.Header.Get("From"))
-	m.Date, _ = dec.DecodeHeader(mail_msg.Header.Get("Date"))
 	m.To, _ = dec.DecodeHeader(mail_msg.Header.Get("To"))
 	m.Bcc, _ = dec.DecodeHeader(mail_msg.Header.Get("Bcc"))
 	m.Subject, _ = dec.DecodeHeader(mail_msg.Header.Get("Subject"))

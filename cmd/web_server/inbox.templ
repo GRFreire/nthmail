@@ -13,26 +13,35 @@ templ inbox_body(rcpt_addr string, ms []mail_utils.Mail_obj) {
 			<title>nthmail.xyz</title>
 			<meta name="viewport" content="width=device-width,initial-scale=1"/>
 			<meta name="description" content="A temporary mail service"/>
+			@styles()
 		</head>
-		<body>
-			<h1>Emails for { rcpt_addr }:</h1>
-			<ul>
-				for _, m := range ms {
-					<li>
-						@mail_comp(m, rcpt_addr)
-					</li>
+		<body class="inbox">
+			@header(rcpt_addr)
+			<div class="inbox-main">
+				if len(ms) != 0 {
+					<ul>
+						for _, m := range ms {
+							<li>
+								@mail_comp(m, rcpt_addr)
+							</li>
+						}
+					</ul>
+				} else {
+					<div class="inbox-empty">
+						<h3>inbox empty</h3>
+					</div>
 				}
-			</ul>
+			</div>
 		</body>
 	</html>
 }
 
 templ mail_comp(m mail_utils.Mail_obj, rcpt_addr string) {
 	<a href={ templ.SafeURL(fmt.Sprintf("/%s/%d", rcpt_addr, m.Id)) }>
-		<div>
-			<p><b>{ m.Subject }</b></p>
-			<p>From { m.From }</p>
+		<div class="content">
+			<p class="inbox-mail-subj"><b>{ m.Subject }</b></p>
+			<p class="inbox-mail-from">{ m.From }</p>
 		</div>
-		<p>{ m.Date }</p>
+		<p class="inbox-mail-date">{ m.Date.Format("3:04 PM") }</p>
 	</a>
 }

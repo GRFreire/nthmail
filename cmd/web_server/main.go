@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/GRFreire/nthmail/pkg/mail_utils"
 	"github.com/GRFreire/nthmail/pkg/rig"
@@ -133,6 +134,7 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 		}
 
 		mail_obj, err := mail_utils.Parse_mail(m.Data, true)
+        mail_obj.Date = time.Unix(m.Arrived_at, 0)
 		mail_obj.Id = m.Id
 		if err != nil {
 			res.WriteHeader(500)
@@ -198,6 +200,7 @@ func (sr ServerResouces) handleMail(res http.ResponseWriter, req *http.Request) 
 	}
 
 	mail_obj, err := mail_utils.Parse_mail(m.Data, false)
+    mail_obj.Date = time.Unix(m.Arrived_at, 0)
 	mail_obj.Id = m.Id
 	if err != nil {
 		res.WriteHeader(500)
