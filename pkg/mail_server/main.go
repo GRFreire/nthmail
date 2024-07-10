@@ -53,7 +53,7 @@ func (session *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 }
 
 func (session *Session) Data(reader io.Reader) error {
-    defer session.tx.Rollback()
+	defer session.tx.Rollback()
 	if bytes, err := io.ReadAll(reader); err != nil {
 		return err
 	} else {
@@ -100,7 +100,7 @@ func Start(db *sql.DB) error {
 	}
 
 	var port int
-    var err error
+	var err error
 	port_str, exists := os.LookupEnv("MAIL_SERVER_PORT")
 	if exists {
 		port, err = strconv.Atoi(port_str)
@@ -124,5 +124,5 @@ func Start(db *sql.DB) error {
 		return err
 	}
 
-    return nil
+	return nil
 }
