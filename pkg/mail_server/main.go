@@ -1,7 +1,8 @@
-package main
+package mail_server
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -52,6 +53,7 @@ func (session *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 }
 
 func (session *Session) Data(reader io.Reader) error {
+    defer session.tx.Rollback()
 	if bytes, err := io.ReadAll(reader); err != nil {
 		return err
 	} else {
@@ -85,13 +87,7 @@ func (session *Session) Logout() error {
 	return nil
 }
 
-func main() {
-	db, err := sql.Open("sqlite3", "./db.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
+func Start(db *sql.DB) error {
 	backend := &Backend{
 		db: db,
 	}
@@ -104,11 +100,12 @@ func main() {
 	}
 
 	var port int
+    var err error
 	port_str, exists := os.LookupEnv("MAIL_SERVER_PORT")
 	if exists {
 		port, err = strconv.Atoi(port_str)
 		if err != nil {
-			log.Fatal("env:MAIL_SERVER_PORT is not a number")
+			return errors.New("env:MAIL_SERVER_PORT is not a number")
 		}
 	} else {
 		port = 1025
@@ -124,6 +121,8 @@ func main() {
 
 	log.Println("Starting server at", server.Addr)
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+    return nil
 }

@@ -3,12 +3,12 @@
 pid=0
 
 get_ts() {
-    stat cmd/web_server pkg/** | grep Modify | awk '{$1=""; print $0}' | sed 's/^ //g' | sort -r | head -1
+    stat pkg/** | grep Modify | awk '{$1=""; print $0}' | sed 's/^ //g' | sort -r | head -1
 }
 
 run_server() {
-    make -B web
-    ./bin/web_server &
+    make -B
+    ./bin/server &
     pid=$!
 }
 

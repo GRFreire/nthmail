@@ -1,8 +1,4 @@
-all: mail web
-
-mail:
-	go build -o "./bin/$@_server" "./cmd/mail_server"
-
-web:
+all:
 	templ generate
-	go build -o "./bin/$@_server" "./cmd/web_server"
+	go build -o ./bin/server ./cmd/server
+

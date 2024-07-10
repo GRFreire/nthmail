@@ -1,7 +1,8 @@
-package main
+package web_server
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,15 +16,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func main() {
+func Start(db *sql.DB) error {
 	server := &ServerResouces{}
-
-	db, err := sql.Open("sqlite3", "./db.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	server.db = db
-	defer db.Close()
+    server.db = db
 
 	domain, exists := os.LookupEnv("MAIL_SERVER_DOMAIN")
 	if !exists {
@@ -32,11 +27,12 @@ func main() {
 	server.domain = domain
 
 	var port int
+    var err error
 	port_str, exists := os.LookupEnv("WEB_SERVER_PORT")
 	if exists {
 		port, err = strconv.Atoi(port_str)
 		if err != nil {
-			log.Fatal("env:MAIL_SERVER_PORT is not a number")
+			return errors.New("env:WEB_SERVER_PORT is not a number")
 		}
 	} else {
 		port = 3000
@@ -47,8 +43,10 @@ func main() {
 	log.Println("Listening on port", port)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), router)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+    return nil
 }
 
 type ServerResouces struct {
@@ -100,6 +98,7 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 		log.Println("could not begin db transaction")
 		return
 	}
+    defer tx.Commit()
 
 	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.data FROM mails WHERE mails.rcpt_addr = ?")
 	if err != nil {
@@ -175,6 +174,7 @@ func (sr ServerResouces) handleMail(res http.ResponseWriter, req *http.Request) 
 		log.Println("could not begin db transaction")
 		return
 	}
+    defer tx.Commit()
 
 	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.data FROM mails WHERE mails.rcpt_addr = ? AND mails.id = ?")
 	if err != nil {
