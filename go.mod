@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.26 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
 )

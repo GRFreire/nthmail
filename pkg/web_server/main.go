@@ -14,11 +14,15 @@ import (
 	"github.com/GRFreire/nthmail/pkg/rig"
 	"github.com/go-chi/chi"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func Start(db *sql.DB) error {
 	server := &ServerResouces{}
-    server.db = db
+	server.db = db
+
+	server.policy = bluemonday.UGCPolicy()
+	server.policy.AllowAttrs("style").Globally()
 
 	domain, exists := os.LookupEnv("MAIL_SERVER_DOMAIN")
 	if !exists {
@@ -27,7 +31,7 @@ func Start(db *sql.DB) error {
 	server.domain = domain
 
 	var port int
-    var err error
+	var err error
 	port_str, exists := os.LookupEnv("WEB_SERVER_PORT")
 	if exists {
 		port, err = strconv.Atoi(port_str)
@@ -46,11 +50,12 @@ func Start(db *sql.DB) error {
 		return err
 	}
 
-    return nil
+	return nil
 }
 
 type ServerResouces struct {
 	db     *sql.DB
+	policy *bluemonday.Policy
 	domain string
 }
 
@@ -98,7 +103,7 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 		log.Println("could not begin db transaction")
 		return
 	}
-    defer tx.Commit()
+	defer tx.Commit()
 
 	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.data FROM mails WHERE mails.rcpt_addr = ?")
 	if err != nil {
@@ -133,7 +138,7 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 		}
 
 		mail_obj, err := mail_utils.Parse_mail(m.Data, true)
-        mail_obj.Date = time.Unix(m.Arrived_at, 0)
+		mail_obj.Date = time.Unix(m.Arrived_at, 0)
 		mail_obj.Id = m.Id
 		if err != nil {
 			res.WriteHeader(500)
@@ -174,7 +179,7 @@ func (sr ServerResouces) handleMail(res http.ResponseWriter, req *http.Request) 
 		log.Println("could not begin db transaction")
 		return
 	}
-    defer tx.Commit()
+	defer tx.Commit()
 
 	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.data FROM mails WHERE mails.rcpt_addr = ? AND mails.id = ?")
 	if err != nil {
@@ -200,7 +205,7 @@ func (sr ServerResouces) handleMail(res http.ResponseWriter, req *http.Request) 
 	}
 
 	mail_obj, err := mail_utils.Parse_mail(m.Data, false)
-    mail_obj.Date = time.Unix(m.Arrived_at, 0)
+	mail_obj.Date = time.Unix(m.Arrived_at, 0)
 	mail_obj.Id = m.Id
 	if err != nil {
 		res.WriteHeader(500)
@@ -213,6 +218,6 @@ func (sr ServerResouces) handleMail(res http.ResponseWriter, req *http.Request) 
 
 	mail_obj = mail_utils.Set_format_index(mail_obj, format, f_pref)
 
-	body := mail_body_comp(rcpt_addr, mail_obj)
+	body := mail_body_comp(rcpt_addr, mail_obj, sr.policy)
 	body.Render(req.Context(), res)
 }

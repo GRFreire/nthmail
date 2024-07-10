@@ -2,10 +2,11 @@ package web_server
 
 import (
 	"github.com/russross/blackfriday/v2"
+    "github.com/microcosm-cc/bluemonday"
 	"github.com/GRFreire/nthmail/pkg/mail_utils"
 )
 
-templ mail_body_comp(rcpt_addr string, m mail_utils.Mail_obj) {
+templ mail_body_comp(rcpt_addr string, m mail_utils.Mail_obj, policy *bluemonday.Policy) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -32,16 +33,16 @@ templ mail_body_comp(rcpt_addr string, m mail_utils.Mail_obj) {
 				</div>
 			</div>
 			<main>
-				@mime_type(m.Body[m.PreferedBodyIndex])
+				@mime_type(m.Body[m.PreferedBodyIndex], policy)
 			</main>
 		</body>
 	</html>
 }
 
-templ mime_type(b mail_utils.Mail_body) {
+templ mime_type(b mail_utils.Mail_body, policy *bluemonday.Policy) {
 	switch b.MimeType {
 		case mail_utils.Html:
-			@body_html(b.Data)
+			@body_html(b.Data, policy)
 		case mail_utils.Markdown:
 			@body_markdown(b.Data)
 		case mail_utils.PlainText:
@@ -59,9 +60,9 @@ templ body_plain(s string) {
 	</div>
 }
 
-templ body_html(s string) {
+templ body_html(s string, policy *bluemonday.Policy) {
 	<div class="content-html">
-		@templ.Raw(s)
+		@templ.Raw(policy.Sanitize(s))
 	</div>
 }
 
