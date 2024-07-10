@@ -2,3 +2,5 @@ bin/*
 !bin/.gitkeep
 *_templ.go
 *.db
+*.db-wal
+*.db-shm
