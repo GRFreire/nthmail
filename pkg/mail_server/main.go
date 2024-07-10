@@ -74,9 +74,6 @@ func (session *Session) Data(reader io.Reader) error {
 			return err
 		}
 
-		log.Println("New mail from <", session.from, "> to <", session.rcpt, ">")
-		log.Println("Data:", string(bytes))
-
 	}
 	return nil
 }
