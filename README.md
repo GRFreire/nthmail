@@ -2,6 +2,39 @@
 
 A temporary email service
 
+## Getting Started
+
+### Compiling
+
+Requirements:
+ - Golang
+ - Templ
+ - Make
+
+```sh
+make
+```
+
+### Creating a database:
+
+Requirements:
+ - SQLite
+
+```sh
+cat migration.sql | sqlite3 db.db
+```
+
+### Running:
+
+Available env variables:
+ - WEB_SERVER_PORT
+ - MAIL_SERVER_PORT
+ - MAIL_SERVER_DOMAIN
+
+```sh
+./bin/server
+```
+
 ## TODO
 
  - Restart when either mail or web server dies
