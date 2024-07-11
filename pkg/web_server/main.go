@@ -44,7 +44,7 @@ func Start(db *sql.DB) error {
 
 	router := server.Routes()
 
-	log.Println("Listening on port", port)
+	log.Println("Starting web server at port", port)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), router)
 	if err != nil {
 		return err

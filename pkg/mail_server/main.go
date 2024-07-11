@@ -108,7 +108,7 @@ func Start(db *sql.DB) error {
 		port = 1025
 	}
 
-	server.Addr = fmt.Sprintf("%s:%d", domain, port)
+	server.Addr = fmt.Sprintf(":%d", port)
 	server.Domain = domain
 	server.WriteTimeout = 60 * time.Second
 	server.ReadTimeout = 60 * time.Second
@@ -116,7 +116,7 @@ func Start(db *sql.DB) error {
 	server.MaxRecipients = 50
 	server.AllowInsecureAuth = true
 
-	log.Println("Starting server at", server.Addr)
+	log.Println("Starting mail server at", server.Addr)
 	if err := server.ListenAndServe(); err != nil {
 		return err
 	}

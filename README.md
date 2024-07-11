@@ -30,6 +30,7 @@ Available env variables:
  - WEB_SERVER_PORT
  - MAIL_SERVER_PORT
  - MAIL_SERVER_DOMAIN
+ - DB_PATH
 
 ```sh
 ./bin/server
