@@ -197,10 +197,8 @@ func (sr ServerResouces) handleMail(res http.ResponseWriter, req *http.Request) 
 	var m db_mail
 	err = row.Scan(&m.Id, &m.Arrived_at, &m.Rcpt_addr, &m.From_addr, &m.Data)
 	if err != nil {
-		res.WriteHeader(500)
-		res.Write([]byte("internal server error"))
+		res.Write([]byte("404 not found"))
 
-		log.Println("could not scan db row")
 		return
 	}
 
