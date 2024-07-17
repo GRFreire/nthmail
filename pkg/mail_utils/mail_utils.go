@@ -94,15 +94,14 @@ func Parse_mail(m_data []byte, header_only bool) (Mail_obj, error) {
 	}
 
 	if content_type == "" || !strings.HasPrefix(mediaType, "multipart/") {
-		var txt []byte
-		_, err := mail_msg.Body.Read(txt)
+		txt_bytes, err := io.ReadAll(mail_msg.Body)
 		if err != nil {
 			return m, err
 		}
 
 		var body Mail_body
 		body.MimeType = PlainText
-		body.Data = string(txt)
+		body.Data = string(txt_bytes)
 
 		m.MediaType = NotMultipart
 		m.Body = append(m.Body, body)
