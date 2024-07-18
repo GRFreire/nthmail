@@ -55,11 +55,11 @@ func Parse_mime_format(s string) (MIMEType, bool) {
 	}
 
 	switch {
-	case strings.Compare(s, "html") == 0:
+	case strings.EqualFold(s, "html"):
 		t = Html
-	case strings.Compare(s, "md") == 0:
+	case strings.EqualFold(s, "md"):
 		t = Markdown
-	case strings.Compare(s, "text") == 0:
+	case strings.EqualFold(s, "text"):
 		t = PlainText
 	default:
 		return t, false
@@ -100,8 +100,14 @@ func Parse_mail(m_data []byte, header_only bool) (Mail_obj, error) {
 		}
 
 		var body Mail_body
-		body.MimeType = PlainText
-		body.Data = string(txt_bytes)
+
+		mail_body, err := Parse_mail_part(mail_msg.Header, txt_bytes)
+		if err != nil {
+			return m, err
+		}
+
+		body.Data = mail_body.Data
+		body.MimeType = mail_body.MimeType
 
 		m.MediaType = NotMultipart
 		m.Body = append(m.Body, body)
@@ -117,7 +123,7 @@ func Parse_mail(m_data []byte, header_only bool) (Mail_obj, error) {
 		return m, errors.New("Not supported multipart type")
 	}
 
-	body, err := Parse_mail_part(mail_msg.Body, params["boundary"])
+	body, err := Parse_mail_multipart(mail_msg.Body, params["boundary"])
 	if err != nil {
 		return m, err
 	}
@@ -127,7 +133,52 @@ func Parse_mail(m_data []byte, header_only bool) (Mail_obj, error) {
 	return m, nil
 }
 
-func Parse_mail_part(mime_data io.Reader, boundary string) ([]Mail_body, error) {
+type Header interface {
+	Get(string) string
+}
+
+func Parse_mail_part(header Header, body []byte) (Mail_body, error) {
+	content_transfer_encoding := header.Get("Content-Transfer-Encoding")
+	content_type := header.Get("Content-Type")
+
+	var mail_body Mail_body
+
+	switch {
+	case strings.HasPrefix(content_type, "text/plain"):
+		mail_body.MimeType = PlainText
+	case strings.HasPrefix(content_type, "text/markdown"):
+		mail_body.MimeType = Markdown
+	case strings.HasPrefix(content_type, "text/html"):
+		mail_body.MimeType = Html
+	default:
+		return mail_body, errors.New("Content type not supported: " + content_type)
+	}
+
+	switch {
+	case strings.EqualFold(content_transfer_encoding, "BASE64"):
+		decoded_content, err := base64.StdEncoding.DecodeString(string(body))
+		if err != nil {
+			return mail_body, err
+		}
+
+		mail_body.Data = string(decoded_content)
+
+	case strings.EqualFold(content_transfer_encoding, "QUOTED-PRINTABLE"):
+		decoded_content, err := io.ReadAll(quotedprintable.NewReader(bytes.NewReader(body)))
+		if err != nil {
+			return mail_body, err
+		}
+
+		mail_body.Data = string(decoded_content)
+
+	default:
+		mail_body.Data = string(body)
+	}
+
+	return mail_body, nil
+}
+
+func Parse_mail_multipart(mime_data io.Reader, boundary string) ([]Mail_body, error) {
 	var body []Mail_body
 
 	reader := multipart.NewReader(mime_data, boundary)
@@ -152,7 +203,7 @@ func Parse_mail_part(mime_data io.Reader, boundary string) ([]Mail_body, error) 
 		}
 
 		if strings.HasPrefix(mediaType, "multipart/") {
-			body_part, err := Parse_mail_part(new_part, params["boundary"])
+			body_part, err := Parse_mail_multipart(new_part, params["boundary"])
 			if err != nil {
 				return body, err
 			}
@@ -165,43 +216,10 @@ func Parse_mail_part(mime_data io.Reader, boundary string) ([]Mail_body, error) 
 			if err != nil {
 				return body, err
 			}
-			content_transfer_encoding := new_part.Header.Get("Content-Transfer-Encoding")
-			content_type := new_part.Header.Get("Content-Type")
-
-			var part_body Mail_body
-
-			switch {
-			case strings.HasPrefix(content_type, "text/plain"):
-				part_body.MimeType = PlainText
-			case strings.HasPrefix(content_type, "text/markdown"):
-				part_body.MimeType = Markdown
-			case strings.HasPrefix(content_type, "text/html"):
-				part_body.MimeType = Html
-			default:
-				return body, errors.New("Content type not supported: " + content_type)
+			part_body, err := Parse_mail_part(new_part.Header, part_data)
+			if err != nil {
+				return body, err
 			}
-
-			switch {
-			case strings.Compare(content_transfer_encoding, "BASE64") == 0:
-				decoded_content, err := base64.StdEncoding.DecodeString(string(part_data))
-				if err != nil {
-					return body, err
-				}
-
-				part_body.Data = string(decoded_content)
-
-			case strings.Compare(content_transfer_encoding, "QUOTED-PRINTABLE") == 0:
-				decoded_content, err := io.ReadAll(quotedprintable.NewReader(bytes.NewReader(part_data)))
-				if err != nil {
-					return body, err
-				}
-
-				part_body.Data = string(decoded_content)
-
-			default:
-				part_body.Data = string(part_data)
-			}
-
 			body = append(body, part_body)
 
 		}
