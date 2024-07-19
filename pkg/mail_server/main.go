@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/GRFreire/nthmail/pkg/mail_utils"
 	"github.com/emersion/go-smtp"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -58,13 +59,19 @@ func (session *Session) Data(reader io.Reader) error {
 		return err
 	} else {
 
-		stmt, err := session.tx.Prepare("INSERT INTO mails (arrived_at, rcpt_addr, from_addr, data) VALUES (?, ?, ?, ?)")
+		stmt, err := session.tx.Prepare("INSERT INTO mails (arrived_at, rcpt_addr, from_addr, subject, data) VALUES (?, ?, ?, ?, ?)")
 		if err != nil {
+			println(err)
 			return err
 		}
 		defer stmt.Close()
 
-		_, err = stmt.Exec(session.arrived_at, session.rcpt, session.from, bytes)
+		mail_obj, err := mail_utils.Parse_mail(bytes, true)
+		if err != nil {
+			return err
+		}
+
+		_, err = stmt.Exec(session.arrived_at, session.rcpt, session.from, mail_obj.Subject, bytes)
 		if err != nil {
 			return err
 		}

@@ -5,5 +5,6 @@ CREATE TABLE mails (
     arrived_at integer not null,
     rcpt_addr text not null,
     from_addr text not null,
+    subject text,
     data blob not null
 );

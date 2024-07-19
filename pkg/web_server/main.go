@@ -59,6 +59,12 @@ type ServerResouces struct {
 	domain string
 }
 
+type db_mail_header struct {
+	Id                   int
+	Arrived_at           int64
+	Rcpt_addr, From_addr string
+	Subject              string
+}
 type db_mail struct {
 	Id                   int
 	Arrived_at           int64
@@ -105,7 +111,7 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 	}
 	defer tx.Commit()
 
-	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.data FROM mails WHERE mails.rcpt_addr = ?")
+	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.subject FROM mails WHERE mails.rcpt_addr = ?")
 	if err != nil {
 		res.WriteHeader(500)
 		res.Write([]byte("internal server error"))
@@ -127,8 +133,8 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 
 	var mails []mail_utils.Mail_obj
 	for rows.Next() {
-		var m db_mail
-		err = rows.Scan(&m.Id, &m.Arrived_at, &m.Rcpt_addr, &m.From_addr, &m.Data)
+		var m db_mail_header
+		err = rows.Scan(&m.Id, &m.Arrived_at, &m.Rcpt_addr, &m.From_addr, &m.Subject)
 		if err != nil {
 			res.WriteHeader(500)
 			res.Write([]byte("internal server error"))
@@ -137,17 +143,12 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 			return
 		}
 
-		mail_obj, err := mail_utils.Parse_mail(m.Data, true)
-		mail_obj.Date = time.Unix(m.Arrived_at, 0)
+		var mail_obj mail_utils.Mail_obj
 		mail_obj.Id = m.Id
-		if err != nil {
-			res.WriteHeader(500)
-			res.Write([]byte("internal server error"))
-
-			log.Println("could not parse mail")
-			log.Println(err)
-			return
-		}
+		mail_obj.Date = time.Unix(m.Arrived_at, 0)
+		mail_obj.To = m.Rcpt_addr
+		mail_obj.From = m.From_addr
+		mail_obj.Subject = m.Subject
 
 		mails = append(mails, mail_obj)
 	}
