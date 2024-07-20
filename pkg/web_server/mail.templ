@@ -35,6 +35,7 @@ templ mail_body_comp(rcpt_addr string, m mail_utils.Mail_obj, policy *bluemonday
 			<main>
 				@mime_type(m.Body[m.PreferedBodyIndex], policy)
 			</main>
+			@footer()
 		</body>
 	</html>
 }
