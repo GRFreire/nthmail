@@ -2,12 +2,12 @@ package web_server
 
 templ header(rcpt_addr string) {
 	<div class="header">
-		<h3>
+		<a href="/">
 			nthmail.xyz
-		</h3>
+		</a>
 		<div class="header-addr">
 			<p>inbox: </p>
-			<span>{ rcpt_addr }</span>
+			<button tooltip="Copied" id="mail-addr" onclick="navigator.clipboard.writeText(document.getElementById('mail-addr').innerText)">{ rcpt_addr }</button>
 		</div>
 	</div>
 }

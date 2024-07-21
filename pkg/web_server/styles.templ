@@ -106,18 +106,40 @@ templ styles() {
             font-family: monospace, "sans-serif";
         }
 
-        .header h3 {
+        .header a {
             font-weight: bold;    
+            font-size: 1.65rem;
+            text-decoration: none;
+            color: inherit;
         }
 
         .header .header-addr {
             display: flex;
             flex-direction: row;
+            padding-bottom: 4px;
+            position: relative;
         }
 
-        .header .header-addr span {
+        .header .header-addr button {
+            background: none;
+            color: inherit;
+            border: none;
+            font: inherit;
+            cursor: pointer;
+            outline: inherit;
+            user-select: text;
+
             margin-left: 18px;
             font-style: italic;
+        }
+
+        *[tooltip]:focus:after {
+            content: attr(tooltip);
+            display:block;
+            position: absolute;
+            top: 130%;
+            left: 50%;
+            font-style: normal;
         }
 
         /* FOOTER */
