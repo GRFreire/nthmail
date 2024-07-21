@@ -325,6 +325,7 @@ templ styles() {
             margin: 4px 0;
             background: #262626;
             padding: 8px;
+            overflow-wrap: break-word;
         }
 
         body.mail .mail-header div:nth-child(odd) {
@@ -348,6 +349,14 @@ templ styles() {
         body.mail main div pre {
             white-space: pre-wrap;
         }
+
+        @media (max-width: 1500px) {
+            body.mail .mail-header, body.mail main {
+                width: 90%;
+                max-width: 975px;
+            }
+        }
+
 
     </style>
 }
