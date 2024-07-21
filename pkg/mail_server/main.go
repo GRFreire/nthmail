@@ -71,7 +71,7 @@ func (session *Session) Data(reader io.Reader) error {
 			return err
 		}
 
-		_, err = stmt.Exec(session.arrived_at, session.rcpt, session.from, mail_obj.Subject, bytes)
+		_, err = stmt.Exec(session.arrived_at, session.rcpt, mail_obj.From, mail_obj.Subject, bytes)
 		if err != nil {
 			return err
 		}
