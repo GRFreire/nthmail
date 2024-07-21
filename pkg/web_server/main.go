@@ -111,7 +111,20 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 	}
 	defer tx.Commit()
 
-	stmt, err := tx.Prepare("SELECT mails.id, mails.arrived_at, mails.rcpt_addr, mails.from_addr, mails.subject FROM mails WHERE mails.rcpt_addr = ?")
+	stmt, err := tx.Prepare(
+        "SELECT "                  +
+            "mails.id, "           +
+            "mails.arrived_at, "   +
+            "mails.rcpt_addr, "    +
+            "mails.from_addr, "    +
+            "mails.subject "       +
+        "FROM "                    +
+            "mails "               +
+        "WHERE "                   +
+            "mails.rcpt_addr = ? " +
+        "ORDER BY "                +
+            "mails.arrived_at DESC",
+        )
 	if err != nil {
 		res.WriteHeader(500)
 		res.Write([]byte("internal server error"))
