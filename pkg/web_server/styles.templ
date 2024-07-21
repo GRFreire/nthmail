@@ -52,6 +52,7 @@ templ styles() {
         body.index p {
             font-size: 1.4rem;
             font-family: monospace, "sans-serif";
+            text-align: center;
         }
 
         body.index .random {
@@ -73,6 +74,20 @@ templ styles() {
             background-color: #181818;
 
             cursor: pointer;
+        }
+        @media (max-width: 900px) {
+            body.index h1 {
+                font-size: 3rem;
+            }
+
+            body.index p {
+                font-size: 1rem;
+            }
+
+            body.index .random a {
+                height: 60px;
+                font-size: 1rem;
+            }
         }
 
         /* HEADER */
