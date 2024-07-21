@@ -142,6 +142,39 @@ templ styles() {
             font-style: normal;
         }
 
+        @media (max-width: 1500px) {
+            .header {
+                width: 975px;
+            }
+        }
+
+        @media (max-width: 975px) {
+            .header {
+                width: 100%;
+                padding: 4px 16px;
+
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .header a {
+                margin-bottom: 16px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .header .header-addr {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 580px) {
+            .header .header-addr {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
         /* FOOTER */
         footer {
             background-color: green;
@@ -194,6 +227,7 @@ templ styles() {
             font-size: 2rem;
             font-family: monospace, "sans-serif";
             color: #CECECE;
+            text-align: center;
         }
 
         body.inbox .inbox-main ul {
@@ -247,6 +281,29 @@ templ styles() {
             margin-left: 32px;
             
             font-size: 1.1rem;
+        }
+
+        @media (max-width: 1500px) {
+            body.inbox .inbox-main {
+                width: 90%;
+                max-width: 975px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            body.inbox .inbox-main li a {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            body.inbox .inbox-main li a div {
+                max-width: 100%;
+            }
+
+            body.inbox .inbox-main li a .inbox-mail-date {
+                margin: 8px 0 0;
+                font-size: 0.8rem;
+            }
         }
 
         /* MAIL */
