@@ -1,4 +1,4 @@
-FROM golang:1.22 as build
+FROM golang:1.23 as build
 
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install make sqlite3 -y
