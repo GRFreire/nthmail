@@ -159,7 +159,7 @@ func (sr ServerResouces) handleInbox(res http.ResponseWriter, req *http.Request)
 		var mail_obj mail_utils.Mail_obj
 		mail_obj.Id = m.Id
 		mail_obj.Date = time.Unix(m.Arrived_at, 0)
-		mail_obj.To = m.Rcpt_addr
+		mail_obj.To = []string{m.Rcpt_addr}
 		mail_obj.From = m.From_addr
 		mail_obj.Subject = m.Subject
 

@@ -40,13 +40,13 @@ type Session struct {
 	domain     string
 }
 
-func get_addr_domain(addr string) string {
-	index := strings.Index(addr, "@")
-	if index < 0 {
-		return ""
+func append_addrs_with_domain(addrs []string, domain string, with_domain *[]string) {
+	for _, a := range addrs {
+		index := strings.Index(a, "@")
+		if index > 0 && a[index+1:] == domain {
+			*with_domain = append(*with_domain, a)
+		}
 	}
-
-	return addr[index+1:]
 }
 
 func (session *Session) AuthPlain(username, password string) error {
@@ -61,9 +61,6 @@ func (session *Session) Mail(from string, opts *smtp.MailOptions) error {
 }
 
 func (session *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
-	if get_addr_domain(to) != session.domain {
-		return errors.New("To addr domain is not available in this server")
-	}
 	session.rcpt = to
 
 	return nil
@@ -82,20 +79,28 @@ func (session *Session) Data(reader io.Reader) error {
 		return err
 	}
 
-	if get_addr_domain(mail_obj.To) != session.domain {
-		return errors.New("To addr domain is not available in this server")
+	var addrs []string
+	append_addrs_with_domain(mail_obj.To, session.domain, &addrs)
+	append_addrs_with_domain(mail_obj.Cc, session.domain, &addrs)
+	append_addrs_with_domain(mail_obj.Bcc, session.domain, &addrs)
+
+	if len(addrs) <= 0 {
+		return errors.New("Not a single addr from to, cc and cc has the domain available in this server")
 	}
 
-	stmt, err := session.tx.Prepare("INSERT INTO mails (arrived_at, rcpt_addr, from_addr, subject, data) VALUES (?, ?, ?, ?, ?)")
-	if err != nil {
-		println(err)
-		return err
-	}
-	defer stmt.Close()
+	for _, addr := range addrs {
+		stmt, err := session.tx.Prepare("INSERT INTO mails (arrived_at, rcpt_addr, from_addr, subject, data) VALUES (?, ?, ?, ?, ?)")
+		if err != nil {
+			println(err)
+			return err
+		}
+		defer stmt.Close()
 
-	_, err = stmt.Exec(session.arrived_at, session.rcpt, mail_obj.From, mail_obj.Subject, bytes)
-	if err != nil {
-		return err
+		_, err = stmt.Exec(session.arrived_at, addr, mail_obj.From, mail_obj.Subject, bytes)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	err = session.tx.Commit()

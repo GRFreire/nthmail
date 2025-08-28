@@ -38,8 +38,9 @@ type Mail_obj struct {
 	Id      int
 	From    string
 	Date    time.Time
-	To      string
-	Bcc     string
+	To      []string
+	Cc      []string
+	Bcc     []string
 	Subject string
 
 	Body []Mail_body
@@ -79,9 +80,25 @@ func Parse_mail(m_data []byte, header_only bool) (Mail_obj, error) {
 	// HEADERS
 	dec := new(mime.WordDecoder)
 	m.From, _ = dec.DecodeHeader(mail_msg.Header.Get("From"))
-	m.To, _ = dec.DecodeHeader(mail_msg.Header.Get("To"))
-	m.Bcc, _ = dec.DecodeHeader(mail_msg.Header.Get("Bcc"))
 	m.Subject, _ = dec.DecodeHeader(mail_msg.Header.Get("Subject"))
+
+	to_addrs, _ := mail_msg.Header.AddressList("To")
+	m.To = make([]string, len(to_addrs))
+	for i, a := range to_addrs {
+		m.To[i] = a.Address
+	}
+
+	cc_addrs, _ := mail_msg.Header.AddressList("Cc")
+	m.Cc = make([]string, len(to_addrs))
+	for i, a := range cc_addrs {
+		m.Cc[i] = a.Address
+	}
+
+	bcc_addrs, _ := mail_msg.Header.AddressList("Bcc")
+	m.Bcc = make([]string, len(to_addrs))
+	for i, a := range bcc_addrs {
+		m.Bcc[i] = a.Address
+	}
 
 	if header_only {
 		return m, nil
